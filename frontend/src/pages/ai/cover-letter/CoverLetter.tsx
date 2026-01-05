@@ -9,7 +9,6 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { PenTool, Loader2, CheckCircle2, Copy } from "lucide-react";
-import { cn } from "../../../lib/utils";
 
 export function CoverLetter() {
   const [companyName, setCompanyName] = useState("");

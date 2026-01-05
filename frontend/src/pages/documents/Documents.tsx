@@ -19,7 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn, formatDate } from "../../lib/utils";
-import { DocumentCategory } from "../../types";
+import type { DocumentCategory } from "../../types";
 
 const categories: { value: DocumentCategory; label: string }[] = [
   { value: "resume", label: "이력서" },

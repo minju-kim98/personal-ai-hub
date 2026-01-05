@@ -11,13 +11,11 @@ import { Input } from "../../../components/ui/input";
 import {
   Map,
   Loader2,
-  CheckCircle2,
   MapPin,
   Calendar,
   DollarSign,
   CheckSquare,
 } from "lucide-react";
-import { cn } from "../../../lib/utils";
 
 const interests = [
   { value: "food", label: "맛집" },

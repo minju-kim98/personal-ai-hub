@@ -7,9 +7,7 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
 import { Languages, Loader2, Copy, Upload, Mail, FileText } from "lucide-react";
-import { cn } from "../../../lib/utils";
 
 type TranslationType = "text" | "srt" | "email";
 
