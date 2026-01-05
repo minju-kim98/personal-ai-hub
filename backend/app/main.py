@@ -44,6 +44,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",  # Vite dev server
         "http://localhost:3000",
+        "https://personal-ai-hub-mu.vercel.app",
         "https://*.vercel.app",
     ],
     allow_credentials=True,
