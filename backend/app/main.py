@@ -19,9 +19,7 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
     # Initialize database (create tables if not exist)
-    # In production, use Alembic migrations instead
-    if settings.DEBUG:
-        await init_db()
+    await init_db()
 
     yield
 
