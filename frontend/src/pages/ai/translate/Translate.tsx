@@ -85,13 +85,13 @@ export function Translate() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-purple-500 flex items-center justify-center">
-          <Languages className="h-5 w-5 text-white" />
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
+          <Languages className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">다국어 AI</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold">다국어 AI</h1>
+          <p className="text-muted-foreground text-sm">
             번역, 자막 처리, 이메일 작성 등 다국어 관련 작업을 처리합니다
           </p>
         </div>
@@ -146,7 +146,7 @@ export function Translate() {
               <select
                 value={targetLanguage}
                 onChange={(e) => setTargetLanguage(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md text-sm"
+                className="w-full px-4 py-2.5 border border-border/50 rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                 disabled={isTranslating}
               >
                 {languages.map((lang) => (
@@ -163,7 +163,7 @@ export function Translate() {
                   <label className="text-sm font-medium">상황 설명</label>
                   <textarea
                     placeholder="예: 프로젝트 진행 상황을 팀원들에게 공유하는 이메일"
-                    className="w-full h-24 px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full h-24 px-4 py-3 border border-border/50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-background"
                     value={context}
                     onChange={(e) => setContext(e.target.value)}
                     disabled={isTranslating}
@@ -173,7 +173,7 @@ export function Translate() {
                   <label className="text-sm font-medium">전달할 핵심 내용</label>
                   <textarea
                     placeholder="전달하고 싶은 내용을 간단히 작성하세요"
-                    className="w-full h-32 px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full h-32 px-4 py-3 border border-border/50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-background"
                     value={keyPoints}
                     onChange={(e) => setKeyPoints(e.target.value)}
                     disabled={isTranslating}
@@ -191,7 +191,7 @@ export function Translate() {
                       ? "SRT 형식의 자막을 붙여넣으세요"
                       : "번역할 텍스트를 입력하세요"
                   }
-                  className="w-full h-48 px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring font-mono"
+                  className="w-full h-48 px-4 py-3 border border-border/50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-background font-mono"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   disabled={isTranslating}

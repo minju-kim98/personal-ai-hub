@@ -125,13 +125,13 @@ export function CoverLetter() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center">
-          <PenTool className="h-5 w-5 text-white" />
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+          <PenTool className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">자기소개서 AI</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold">자기소개서 AI</h1>
+          <p className="text-muted-foreground text-sm">
             이력서와 포트폴리오를 기반으로 맞춤형 자기소개서를 작성합니다
           </p>
         </div>
@@ -160,7 +160,7 @@ export function CoverLetter() {
               <label className="text-sm font-medium">채용 공고</label>
               <textarea
                 placeholder="채용 공고 내용을 붙여넣거나 URL을 입력하세요"
-                className="w-full h-48 px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-48 px-4 py-3 border border-border/50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-background"
                 value={jobPosting}
                 onChange={(e) => setJobPosting(e.target.value)}
                 disabled={isGenerating}

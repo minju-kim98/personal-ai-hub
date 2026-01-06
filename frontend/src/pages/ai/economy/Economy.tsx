@@ -271,13 +271,13 @@ export function Economy() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-red-500 flex items-center justify-center">
-          <TrendingUp className="h-5 w-5 text-white" />
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg shadow-rose-500/25">
+          <TrendingUp className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">경제 이슈 AI</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold">경제 이슈 AI</h1>
+          <p className="text-muted-foreground text-sm">
             IT 뉴스 요약과 개인 재정 분석을 제공합니다
           </p>
         </div>
@@ -510,7 +510,7 @@ export function Economy() {
                 <select
                   value={expenseCategory}
                   onChange={(e) => setExpenseCategory(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md text-sm"
+                  className="w-full px-4 py-2.5 border border-border/50 rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                   disabled={isAddingExpense}
                 >
                   {expenseCategories.map((cat) => (

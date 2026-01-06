@@ -105,13 +105,13 @@ export function Proposal() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-yellow-500 flex items-center justify-center">
-          <Lightbulb className="h-5 w-5 text-white" />
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+          <Lightbulb className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">기획서 AI</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold">기획서 AI</h1>
+          <p className="text-muted-foreground text-sm">
             Deep Research 기반으로 상세한 기획서를 작성합니다
           </p>
         </div>
@@ -131,7 +131,7 @@ export function Proposal() {
               <label className="text-sm font-medium">아이디어</label>
               <textarea
                 placeholder="아이디어를 자세히 설명해주세요"
-                className="w-full h-32 px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-32 px-4 py-3 border border-border/50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-background"
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
                 disabled={isGenerating}

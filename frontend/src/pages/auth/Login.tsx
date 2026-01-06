@@ -66,16 +66,16 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <Card className="w-full max-w-md border-0 shadow-xl">
+        <CardHeader className="text-center pb-2">
+          <div className="flex justify-center mb-6">
+            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/25">
               <FileText className="h-7 w-7 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Personal AI Hub</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold">Personal AI Hub</CardTitle>
+          <CardDescription className="text-base">
             나만을 위한 AI가 모여있는 플랫폼
           </CardDescription>
         </CardHeader>

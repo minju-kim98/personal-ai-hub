@@ -47,13 +47,13 @@ export function Settings() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-gray-500 flex items-center justify-center">
-          <SettingsIcon className="h-5 w-5 text-white" />
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center shadow-lg shadow-slate-500/25">
+          <SettingsIcon className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">설정</h1>
-          <p className="text-muted-foreground">계정 및 앱 설정을 관리합니다</p>
+          <h1 className="text-2xl font-bold">설정</h1>
+          <p className="text-muted-foreground text-sm">계정 및 앱 설정을 관리합니다</p>
         </div>
       </div>
 

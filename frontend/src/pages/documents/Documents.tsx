@@ -128,10 +128,13 @@ export function Documents() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/25">
+          <Folder className="h-6 w-6 text-primary-foreground" />
+        </div>
         <div>
-          <h1 className="text-3xl font-bold">내 문서함</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold">내 문서함</h1>
+          <p className="text-muted-foreground text-sm">
             문서를 업로드하고 AI가 분석할 수 있도록 관리하세요
           </p>
         </div>
@@ -152,7 +155,7 @@ export function Documents() {
               onChange={(e) =>
                 setUploadCategory(e.target.value as DocumentCategory)
               }
-              className="px-3 py-2 border rounded-md text-sm"
+              className="px-4 py-2.5 border border-border/50 rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
             >
               {categories.map((cat) => (
                 <option key={cat.value} value={cat.value}>

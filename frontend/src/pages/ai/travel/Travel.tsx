@@ -140,13 +140,13 @@ export function Travel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-cyan-500 flex items-center justify-center">
-          <Map className="h-5 w-5 text-white" />
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-lg shadow-cyan-500/25">
+          <Map className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">여행/데이트 코스 AI</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold">여행/데이트 코스 AI</h1>
+          <p className="text-muted-foreground text-sm">
             맞춤형 여행/데이트 코스와 일정을 계획합니다
           </p>
         </div>

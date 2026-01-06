@@ -145,13 +145,13 @@ export function WeeklyReport() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-green-500 flex items-center justify-center">
-          <FileBarChart className="h-5 w-5 text-white" />
+      <div className="flex items-center gap-4">
+        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+          <FileBarChart className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">주간보고 AI</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold">주간보고 AI</h1>
+          <p className="text-muted-foreground text-sm">
             기존 보고서 스타일을 학습하여 구조화된 주간보고서를 생성합니다
           </p>
         </div>
@@ -171,7 +171,7 @@ export function WeeklyReport() {
               <label className="text-sm font-medium">이번 주 수행 업무</label>
               <textarea
                 placeholder="이번 주에 수행한 업무를 자유롭게 작성하세요"
-                className="w-full h-40 px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-40 px-4 py-3 border border-border/50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-background"
                 value={tasksCompleted}
                 onChange={(e) => setTasksCompleted(e.target.value)}
                 disabled={isGenerating}
@@ -181,7 +181,7 @@ export function WeeklyReport() {
               <label className="text-sm font-medium">다음 주 계획 (선택)</label>
               <textarea
                 placeholder="다음 주에 예정된 업무를 작성하세요"
-                className="w-full h-24 px-3 py-2 border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-24 px-4 py-3 border border-border/50 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors bg-background"
                 value={nextWeekPlan}
                 onChange={(e) => setNextWeekPlan(e.target.value)}
                 disabled={isGenerating}
@@ -299,7 +299,7 @@ export function WeeklyReport() {
                     <select
                       value={selectedDocumentId}
                       onChange={(e) => handleDocumentSelect(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-md text-sm"
+                      className="w-full px-4 py-2.5 border border-border/50 rounded-xl text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                       disabled={isGenerating}
                     >
                       <option value="">문서 선택...</option>
