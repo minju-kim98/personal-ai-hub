@@ -37,6 +37,15 @@ async def _run_news_cleanup():
         logger.error(f"News cleanup job failed: {e}")
 
 
+async def _run_economy_briefing():
+    """Wrapper to run economy briefing email in async context."""
+    from app.services.email import send_all_economy_briefings
+    try:
+        await send_all_economy_briefings()
+    except Exception as e:
+        logger.error(f"Economy briefing job failed: {e}")
+
+
 def start_scheduler():
     """Start the scheduler with configured jobs."""
     global scheduler
@@ -69,8 +78,17 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # Add economy briefing email job - runs daily at 6:30 AM
+    scheduler.add_job(
+        _run_economy_briefing,
+        trigger=CronTrigger(hour=6, minute=30),
+        id="economy_briefing",
+        name="Send economy briefing emails",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started with jobs: news_fetch (every 6h), news_cleanup (daily 3AM)")
+    logger.info("Scheduler started with jobs: news_fetch (every 6h), news_cleanup (daily 3AM), economy_briefing (daily 6:30AM)")
 
 
 def shutdown_scheduler():
@@ -90,5 +108,9 @@ async def run_job_now(job_id: str) -> dict:
         from app.tasks.news_fetcher import cleanup_old_news
         await cleanup_old_news()
         return {"status": "completed"}
+    elif job_id == "economy_briefing":
+        from app.services.email import send_all_economy_briefings
+        count = await send_all_economy_briefings()
+        return {"status": "completed", "sent_count": count}
     else:
         raise ValueError(f"Unknown job: {job_id}")

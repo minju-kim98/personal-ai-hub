@@ -18,6 +18,8 @@ import {
   ExternalLink,
   Loader2,
   RefreshCw,
+  Trash2,
+  Calendar,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { economyApi } from "../../../services/api";
@@ -44,6 +46,25 @@ interface EconomySettings {
   email_time: string;
 }
 
+interface Expense {
+  id: string;
+  amount: number;
+  category: string;
+  description: string;
+  expense_date: string;
+}
+
+const expenseCategories = [
+  { value: "food", label: "식비" },
+  { value: "transport", label: "교통비" },
+  { value: "shopping", label: "쇼핑" },
+  { value: "entertainment", label: "여가/문화" },
+  { value: "health", label: "의료/건강" },
+  { value: "education", label: "교육" },
+  { value: "housing", label: "주거/통신" },
+  { value: "other", label: "기타" },
+];
+
 type Tab = "news" | "expenses" | "settings";
 
 export function Economy() {
@@ -60,6 +81,18 @@ export function Economy() {
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isFetchingNews, setIsFetchingNews] = useState(false);
+
+  // Expense states
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseCategory, setExpenseCategory] = useState("food");
+  const [expenseDescription, setExpenseDescription] = useState("");
+  const [expenseDate, setExpenseDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [isAddingExpense, setIsAddingExpense] = useState(false);
+  const [totalExpenses, setTotalExpenses] = useState(0);
 
   // Trigger news fetch from RSS feeds
   const triggerNewsFetch = async () => {
@@ -121,6 +154,77 @@ export function Economy() {
     fetchStocks();
     fetchSettings();
   }, [fetchStocks, fetchSettings]);
+
+  // Fetch expenses
+  const fetchExpenses = useCallback(async () => {
+    setIsLoadingExpenses(true);
+    try {
+      const response = await economyApi.listExpenses();
+      const data = response.data;
+      setExpenses(data.items || []);
+      setTotalExpenses(data.total_amount || 0);
+    } catch (error) {
+      console.error("Failed to fetch expenses:", error);
+    } finally {
+      setIsLoadingExpenses(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "expenses") {
+      fetchExpenses();
+    }
+  }, [activeTab, fetchExpenses]);
+
+  const addExpense = async () => {
+    if (!expenseAmount || parseFloat(expenseAmount) <= 0) {
+      alert("금액을 입력해주세요.");
+      return;
+    }
+
+    setIsAddingExpense(true);
+    try {
+      await economyApi.addExpense({
+        amount: parseFloat(expenseAmount),
+        category: expenseCategory,
+        description: expenseDescription,
+        expense_date: expenseDate,
+      });
+      // Reset form
+      setExpenseAmount("");
+      setExpenseDescription("");
+      setExpenseDate(new Date().toISOString().split("T")[0]);
+      // Refresh list
+      await fetchExpenses();
+    } catch (error) {
+      console.error("Failed to add expense:", error);
+      alert("소비 내역 추가에 실패했습니다.");
+    } finally {
+      setIsAddingExpense(false);
+    }
+  };
+
+  const deleteExpense = async (id: string) => {
+    if (!confirm("이 소비 내역을 삭제하시겠습니까?")) return;
+
+    try {
+      await economyApi.deleteExpense(id);
+      await fetchExpenses();
+    } catch (error) {
+      console.error("Failed to delete expense:", error);
+      alert("삭제에 실패했습니다.");
+    }
+  };
+
+  // Calculate expense summary by category
+  const expenseSummary = expenses.reduce(
+    (acc, expense) => {
+      const cat = expense.category || "other";
+      acc[cat] = (acc[cat] || 0) + expense.amount;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   const addStock = async () => {
     if (!newStock) return;
@@ -375,24 +479,189 @@ export function Economy() {
       )}
 
       {activeTab === "expenses" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>소비 분석</CardTitle>
-            <CardDescription>
-              소비 내역을 분석하고 인사이트를 제공합니다
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12 text-muted-foreground">
-              <PieChart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>소비 내역을 추가하거나</p>
-              <p>Google Sheets를 연동하세요</p>
-              <Button variant="outline" className="mt-4">
-                소비 내역 추가
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Add Expense Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">소비 내역 추가</CardTitle>
+              <CardDescription>새로운 소비 내역을 기록하세요</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">금액</label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(e.target.value)}
+                  disabled={isAddingExpense}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">카테고리</label>
+                <select
+                  value={expenseCategory}
+                  onChange={(e) => setExpenseCategory(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                  disabled={isAddingExpense}
+                >
+                  {expenseCategories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">설명</label>
+                <Input
+                  placeholder="예: 점심 식사"
+                  value={expenseDescription}
+                  onChange={(e) => setExpenseDescription(e.target.value)}
+                  disabled={isAddingExpense}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">날짜</label>
+                <Input
+                  type="date"
+                  value={expenseDate}
+                  onChange={(e) => setExpenseDate(e.target.value)}
+                  disabled={isAddingExpense}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={addExpense}
+                disabled={isAddingExpense}
+              >
+                {isAddingExpense ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    추가 중...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    소비 추가
+                  </>
+                )}
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Expense Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">카테고리별 요약</CardTitle>
+              <CardDescription>
+                총 지출: {totalExpenses.toLocaleString()}원
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {Object.keys(expenseSummary).length > 0 ? (
+                <div className="space-y-3">
+                  {Object.entries(expenseSummary)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([cat, amount]) => {
+                      const catInfo = expenseCategories.find(
+                        (c) => c.value === cat
+                      );
+                      const percentage =
+                        totalExpenses > 0
+                          ? Math.round((amount / totalExpenses) * 100)
+                          : 0;
+                      return (
+                        <div key={cat} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span>{catInfo?.label || cat}</span>
+                            <span className="font-medium">
+                              {amount.toLocaleString()}원 ({percentage}%)
+                            </span>
+                          </div>
+                          <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <PieChart className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">소비 내역이 없습니다</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Expense List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">최근 소비 내역</CardTitle>
+              <CardDescription>
+                {expenses.length}개의 소비 내역
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingExpenses ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : expenses.length > 0 ? (
+                <div className="space-y-2 max-h-[400px] overflow-auto">
+                  {expenses.map((expense) => {
+                    const catInfo = expenseCategories.find(
+                      (c) => c.value === expense.category
+                    );
+                    return (
+                      <div
+                        key={expense.id}
+                        className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg group"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 bg-background rounded">
+                              {catInfo?.label || expense.category}
+                            </span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {expense.expense_date}
+                            </span>
+                          </div>
+                          <p className="text-sm truncate mt-1">
+                            {expense.description || "-"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 ml-2">
+                          <span className="font-medium whitespace-nowrap">
+                            {expense.amount.toLocaleString()}원
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => deleteExpense(expense.id)}
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Calendar className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">소비 내역을 추가해보세요</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {activeTab === "settings" && (
