@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -16,6 +16,7 @@ import {
   DollarSign,
   CheckSquare,
 } from "lucide-react";
+import { aiApi } from "../../../services/api";
 
 const interests = [
   { value: "food", label: "맛집" },
@@ -25,6 +26,30 @@ const interests = [
   { value: "shopping", label: "쇼핑" },
   { value: "activity", label: "액티비티" },
 ];
+
+interface ScheduleItem {
+  time: string;
+  activity: string;
+  place: string;
+  duration?: string;
+}
+
+interface DaySchedule {
+  date: string;
+  title: string;
+  schedule: ScheduleItem[];
+}
+
+interface BudgetItem {
+  description: string;
+  amount: number;
+}
+
+interface TravelResult {
+  timeline: DaySchedule[];
+  budget: Record<string, BudgetItem | number>;
+  checklist: string[];
+}
 
 export function Travel() {
   const [travelType, setTravelType] = useState<"travel" | "date">("travel");
@@ -36,11 +61,8 @@ export function Travel() {
   const [budgetRange, setBudgetRange] = useState("");
   const [companions, setCompanions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<{
-    timeline: any[];
-    budget: any;
-    checklist: string[];
-  } | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [result, setResult] = useState<TravelResult | null>(null);
 
   const toggleInterest = (value: string) => {
     setSelectedInterests((prev) =>
@@ -50,6 +72,36 @@ export function Travel() {
     );
   };
 
+  // Poll for status updates
+  const pollStatus = useCallback(async (sid: string) => {
+    try {
+      const response = await aiApi.getTravelPlan(sid);
+      const { status, result: planResult } = response.data;
+
+      if (status === "completed" && planResult) {
+        setResult(planResult);
+        setIsGenerating(false);
+        setSessionId(null);
+      } else if (status === "failed") {
+        alert("여행 계획 생성에 실패했습니다.");
+        setIsGenerating(false);
+        setSessionId(null);
+      } else {
+        // Continue polling
+        setTimeout(() => pollStatus(sid), 2000);
+      }
+    } catch (error) {
+      console.error("Failed to poll status:", error);
+      setIsGenerating(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionId) {
+      pollStatus(sessionId);
+    }
+  }, [sessionId, pollStatus]);
+
   const handleGenerate = async () => {
     if (!destination || !startDate || !endDate) {
       alert("목적지와 날짜를 입력해주세요.");
@@ -57,44 +109,33 @@ export function Travel() {
     }
 
     setIsGenerating(true);
+    setResult(null);
 
-    await new Promise((resolve) => setTimeout(resolve, 4000));
+    try {
+      const response = await aiApi.createTravelPlan({
+        travel_type: travelType,
+        start_date: startDate,
+        end_date: endDate,
+        departure: departure || "서울",
+        destination,
+        interests: selectedInterests.length > 0 ? selectedInterests : undefined,
+        budget_range: budgetRange || undefined,
+        companions: companions || undefined,
+      });
 
-    setResult({
-      timeline: [
-        {
-          date: startDate,
-          title: "Day 1",
-          schedule: [
-            { time: "09:00", activity: "출발", place: departure || "서울", duration: "2시간 30분" },
-            { time: "11:30", activity: "점심", place: "초당순두부마을", duration: "1시간" },
-            { time: "13:00", activity: "관광", place: "경포해변", duration: "2시간" },
-            { time: "15:30", activity: "카페", place: "테라로사", duration: "1시간" },
-            { time: "17:00", activity: "체크인", place: "숙소", duration: "" },
-            { time: "19:00", activity: "저녁", place: "동화가든", duration: "1시간 30분" },
-          ],
-        },
-      ],
-      budget: {
-        transportation: { description: "교통비", amount: 60000 },
-        accommodation: { description: "숙박비", amount: 150000 },
-        food: { description: "식비", amount: 100000 },
-        activities: { description: "관람/체험비", amount: 30000 },
-        total: 340000,
-      },
-      checklist: [
-        "신분증",
-        "충전기",
-        "보조배터리",
-        "여벌 옷",
-        "세면도구",
-        "상비약",
-        "현금",
-        "카메라",
-      ],
-    });
-
-    setIsGenerating(false);
+      // If immediate result is returned
+      if (response.data.result) {
+        setResult(response.data.result);
+        setIsGenerating(false);
+      } else if (response.data.session_id) {
+        // If async processing, start polling
+        setSessionId(response.data.session_id);
+      }
+    } catch (error: any) {
+      console.error("Failed to create travel plan:", error);
+      alert(error.response?.data?.detail || "여행 계획 생성에 실패했습니다.");
+      setIsGenerating(false);
+    }
   };
 
   return (

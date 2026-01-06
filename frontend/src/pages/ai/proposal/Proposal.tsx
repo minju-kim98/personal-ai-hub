@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -9,6 +9,7 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Lightbulb, Loader2, CheckCircle2, Download } from "lucide-react";
+import { aiApi } from "../../../services/api";
 
 const progressSteps = [
   "리서치 계획 수립 중...",
@@ -24,8 +25,45 @@ export function Proposal() {
   const [budgetRange, setBudgetRange] = useState("");
   const [specialRequirements, setSpecialRequirements] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<string | null>(null);
+
+  // Poll for status updates
+  const pollStatus = useCallback(async (sid: string) => {
+    try {
+      const response = await aiApi.getProposalStatus(sid);
+      const { status, current_step } = response.data;
+
+      // Map step to index
+      const stepIndex = progressSteps.findIndex(step =>
+        current_step?.includes(step.replace("...", ""))
+      );
+      if (stepIndex >= 0) setCurrentStep(stepIndex);
+
+      if (status === "completed") {
+        const resultResponse = await aiApi.getProposalResult(sid);
+        setResult(resultResponse.data.result || resultResponse.data.content);
+        setIsGenerating(false);
+        setSessionId(null);
+      } else if (status === "failed") {
+        alert("기획서 생성에 실패했습니다.");
+        setIsGenerating(false);
+        setSessionId(null);
+      } else {
+        setTimeout(() => pollStatus(sid), 3000);
+      }
+    } catch (error) {
+      console.error("Failed to poll status:", error);
+      setIsGenerating(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionId) {
+      pollStatus(sessionId);
+    }
+  }, [sessionId, pollStatus]);
 
   const handleGenerate = async () => {
     if (!idea) {
@@ -35,68 +73,22 @@ export function Proposal() {
 
     setIsGenerating(true);
     setResult(null);
+    setCurrentStep(0);
 
-    // Simulate progress through steps
-    for (let i = 0; i < progressSteps.length; i++) {
-      setCurrentStep(i);
-      await new Promise((resolve) =>
-        setTimeout(resolve, 2000 + Math.random() * 2000)
-      );
+    try {
+      const response = await aiApi.createProposal({
+        idea,
+        target_market: targetMarket || undefined,
+        budget_range: budgetRange || undefined,
+        special_requirements: specialRequirements || undefined,
+      });
+
+      setSessionId(response.data.session_id);
+    } catch (error: any) {
+      console.error("Failed to create proposal:", error);
+      alert(error.response?.data?.detail || "기획서 생성에 실패했습니다.");
+      setIsGenerating(false);
     }
-
-    setResult(`# ${idea} 기획서
-
-## 1. Executive Summary
-본 기획서는 ${idea}에 대한 상세한 사업 계획을 담고 있습니다...
-
-## 2. 시장 분석
-### 2.1 시장 규모 및 성장성
-- 국내 시장 규모: 약 1조원 (연평균 15% 성장)
-- 글로벌 시장 규모: 약 100조원
-
-### 2.2 타겟 고객
-- 주 타겟: 20-40대 직장인
-- 부 타겟: 대학생, 프리랜서
-
-### 2.3 경쟁사 분석
-| 경쟁사 | 강점 | 약점 |
-|-------|-----|-----|
-| A사 | 브랜드 인지도 | 높은 가격 |
-| B사 | 기술력 | 사용성 |
-
-## 3. 법률 및 규제
-### 3.1 관련 법령
-- 개인정보보호법
-- 전자상거래법
-
-## 4. 기술 설계
-### 4.1 기술 스택
-- Frontend: React, TypeScript
-- Backend: FastAPI, PostgreSQL
-- AI: LangChain, LangGraph
-
-### 4.2 시스템 아키텍처
-[아키텍처 다이어그램]
-
-## 5. MVP 계획
-### 5.1 MVP 기능 범위
-1. 핵심 기능 A
-2. 핵심 기능 B
-3. 핵심 기능 C
-
-### 5.2 마일스톤
-- Phase 1: 기본 기능 구현
-- Phase 2: 베타 테스트
-- Phase 3: 정식 출시
-
-## 6. 리스크 분석
-| 리스크 | 영향도 | 대응 방안 |
-|-------|-------|---------|
-| 기술적 리스크 | 중 | 검증된 기술 활용 |
-| 시장 리스크 | 상 | MVP 빠른 검증 |
-`);
-
-    setIsGenerating(false);
   };
 
   const downloadMarkdown = () => {

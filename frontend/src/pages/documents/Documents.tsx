@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Card,
@@ -17,9 +17,11 @@ import {
   MoreVertical,
   Download,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { cn, formatDate } from "../../lib/utils";
-import type { DocumentCategory } from "../../types";
+import type { DocumentCategory, Document } from "../../types";
+import { documentApi } from "../../services/api";
 
 const categories: { value: DocumentCategory; label: string }[] = [
   { value: "resume", label: "이력서" },
@@ -30,29 +32,34 @@ const categories: { value: DocumentCategory; label: string }[] = [
   { value: "misc", label: "기타" },
 ];
 
-// Mock data for demo
-const mockDocuments = [
-  {
-    id: "1",
-    title: "이력서_2026",
-    category: "resume" as DocumentCategory,
-    original_file_name: "이력서_2026.docx",
-    created_at: "2026-01-05",
-  },
-  {
-    id: "2",
-    title: "포트폴리오_2026",
-    category: "portfolio" as DocumentCategory,
-    original_file_name: "포트폴리오_2026.pptx",
-    created_at: "2026-01-04",
-  },
-];
-
 export function Documents() {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadCategory, setUploadCategory] = useState<DocumentCategory>("resume");
   const [isUploading, setIsUploading] = useState(false);
+
+  // Fetch documents
+  const fetchDocuments = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const params: { category?: string; search?: string } = {};
+      if (selectedCategory !== "all") params.category = selectedCategory;
+      if (searchQuery) params.search = searchQuery;
+
+      const response = await documentApi.list(params);
+      setDocuments(response.data.items || response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch documents:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -60,9 +67,8 @@ export function Documents() {
 
       setIsUploading(true);
       try {
-        // TODO: Implement actual upload
-        console.log("Uploading:", acceptedFiles[0], "Category:", uploadCategory);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await documentApi.upload(acceptedFiles[0], uploadCategory);
+        await fetchDocuments();
         alert("파일이 업로드되었습니다!");
       } catch (error) {
         console.error("Upload error:", error);
@@ -71,8 +77,37 @@ export function Documents() {
         setIsUploading(false);
       }
     },
-    [uploadCategory]
+    [uploadCategory, fetchDocuments]
   );
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+
+    try {
+      await documentApi.delete(id);
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("삭제에 실패했습니다.");
+    }
+  };
+
+  const handleDownload = async (id: string, fileName: string) => {
+    try {
+      const response = await documentApi.download(id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("다운로드에 실패했습니다.");
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -89,17 +124,6 @@ export function Documents() {
       "text/plain": [".txt"],
     },
     maxFiles: 1,
-  });
-
-  const filteredDocuments = mockDocuments.filter((doc) => {
-    if (selectedCategory !== "all" && doc.category !== selectedCategory)
-      return false;
-    if (
-      searchQuery &&
-      !doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-      return false;
-    return true;
   });
 
   return (
@@ -151,7 +175,10 @@ export function Documents() {
             {isDragActive ? (
               <p>파일을 여기에 놓으세요</p>
             ) : isUploading ? (
-              <p>업로드 중...</p>
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <p>업로드 중...</p>
+              </div>
             ) : (
               <>
                 <p className="font-medium">
@@ -199,64 +226,76 @@ export function Documents() {
       </div>
 
       {/* Document List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredDocuments.map((doc) => (
-          <Card key={doc.id} className="group hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-primary" />
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {documents.map((doc) => (
+            <Card key={doc.id} className="group hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">{doc.title}</CardTitle>
+                      <CardDescription className="text-xs">
+                        {doc.original_file_name}
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-base">{doc.title}</CardTitle>
-                    <CardDescription className="text-xs">
-                      {doc.original_file_name}
-                    </CardDescription>
-                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between text-sm">
-                <span className="px-2 py-1 bg-secondary rounded text-xs">
-                  {categories.find((c) => c.value === doc.category)?.label}
-                </span>
-                <span className="text-muted-foreground">
-                  {formatDate(doc.created_at)}
-                </span>
-              </div>
-              <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="outline" size="sm" className="flex-1 gap-1">
-                  <Download className="h-3 w-3" />
-                  다운로드
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="px-2 py-1 bg-secondary rounded text-xs">
+                    {categories.find((c) => c.value === doc.category)?.label}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {formatDate(doc.created_at)}
+                  </span>
+                </div>
+                <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1"
+                    onClick={() => handleDownload(doc.id, doc.original_file_name)}
+                  >
+                    <Download className="h-3 w-3" />
+                    다운로드
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(doc.id)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
 
-        {filteredDocuments.length === 0 && (
-          <div className="col-span-full text-center py-12">
-            <Folder className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
-              {searchQuery
-                ? "검색 결과가 없습니다"
-                : "아직 업로드된 문서가 없습니다"}
-            </p>
-          </div>
-        )}
-      </div>
+          {documents.length === 0 && (
+            <div className="col-span-full text-center py-12">
+              <Folder className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                {searchQuery
+                  ? "검색 결과가 없습니다"
+                  : "아직 업로드된 문서가 없습니다"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -9,18 +9,79 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { PenTool, Loader2, CheckCircle2, Copy } from "lucide-react";
+import { aiApi, documentApi } from "../../../services/api";
+import type { Document } from "../../../types";
 
 export function CoverLetter() {
   const [companyName, setCompanyName] = useState("");
   const [jobPosting, setJobPosting] = useState("");
   const [additionalInstructions, setAdditionalInstructions] = useState("");
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [result, setResult] = useState<Record<string, string> | null>(null);
   const [progress, setProgress] = useState<{
     step: string;
     iteration?: number;
     score?: number;
   } | null>(null);
+
+  // Fetch user's documents (resumes, portfolios)
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const response = await documentApi.list({ category: "resume" });
+        const resumes = response.data.items || response.data || [];
+        const portfolioResponse = await documentApi.list({ category: "portfolio" });
+        const portfolios = portfolioResponse.data.items || portfolioResponse.data || [];
+        setDocuments([...resumes, ...portfolios]);
+      } catch (error) {
+        console.error("Failed to fetch documents:", error);
+      }
+    };
+    fetchDocuments();
+  }, []);
+
+  // Poll for status updates
+  const pollStatus = useCallback(async (sid: string) => {
+    try {
+      const response = await aiApi.getCoverLetterStatus(sid);
+      const { status, current_step, iteration, similarity_score } = response.data;
+
+      setProgress({
+        step: current_step || "처리 중...",
+        iteration,
+        score: similarity_score,
+      });
+
+      if (status === "completed") {
+        const resultResponse = await aiApi.getCoverLetterResult(sid);
+        setResult(resultResponse.data.result);
+        setProgress(null);
+        setIsGenerating(false);
+        setSessionId(null);
+      } else if (status === "failed") {
+        alert("자기소개서 생성에 실패했습니다.");
+        setProgress(null);
+        setIsGenerating(false);
+        setSessionId(null);
+      } else {
+        // Continue polling
+        setTimeout(() => pollStatus(sid), 2000);
+      }
+    } catch (error) {
+      console.error("Failed to poll status:", error);
+      setProgress(null);
+      setIsGenerating(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionId) {
+      pollStatus(sessionId);
+    }
+  }, [sessionId, pollStatus]);
 
   const handleGenerate = async () => {
     if (!companyName || !jobPosting) {
@@ -29,47 +90,37 @@ export function CoverLetter() {
     }
 
     setIsGenerating(true);
-    setProgress({ step: "문서 수집 중..." });
+    setResult(null);
+    setProgress({ step: "요청 전송 중..." });
 
-    // Simulate progress
-    const steps = [
-      { step: "문서 수집 중...", delay: 1000 },
-      { step: "회사 정보 조사 중...", delay: 2000 },
-      { step: "채용 공고 분석 중...", delay: 1500 },
-      { step: "자기소개서 초안 작성 중...", delay: 3000 },
-      { step: "동일인물 비교 중...", iteration: 1, score: 65, delay: 2000 },
-      { step: "피드백 반영 수정 중...", iteration: 2, delay: 2000 },
-      { step: "동일인물 비교 중...", iteration: 2, score: 78, delay: 1500 },
-      { step: "피드백 반영 수정 중...", iteration: 3, delay: 2000 },
-      { step: "동일인물 비교 중...", iteration: 3, score: 87, delay: 1500 },
-    ];
+    try {
+      const response = await aiApi.createCoverLetter({
+        company_name: companyName,
+        job_posting: jobPosting,
+        document_ids: selectedDocuments.length > 0 ? selectedDocuments : undefined,
+        additional_instructions: additionalInstructions || undefined,
+      });
 
-    for (const step of steps) {
-      setProgress(step);
-      await new Promise((resolve) => setTimeout(resolve, step.delay));
+      setSessionId(response.data.session_id);
+    } catch (error: any) {
+      console.error("Failed to create cover letter:", error);
+      alert(error.response?.data?.detail || "자기소개서 생성에 실패했습니다.");
+      setProgress(null);
+      setIsGenerating(false);
     }
-
-    // Mock result
-    setResult({
-      "1. 지원 동기":
-        "저는 " +
-        companyName +
-        "의 혁신적인 비전과 기술력에 깊은 감명을 받아 지원하게 되었습니다...",
-      "2. 직무 관련 경험":
-        "지난 3년간 소프트웨어 개발 분야에서 다양한 프로젝트를 수행하며 실무 역량을 쌓아왔습니다...",
-      "3. 입사 후 포부":
-        "입사 후에는 " +
-        companyName +
-        "의 핵심 인재로 성장하여 회사의 발전에 기여하고자 합니다...",
-    });
-
-    setProgress(null);
-    setIsGenerating(false);
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert("복사되었습니다!");
+  };
+
+  const toggleDocument = (docId: string) => {
+    setSelectedDocuments((prev) =>
+      prev.includes(docId)
+        ? prev.filter((id) => id !== docId)
+        : [...prev, docId]
+    );
   };
 
   return (
@@ -115,6 +166,30 @@ export function CoverLetter() {
                 disabled={isGenerating}
               />
             </div>
+
+            {documents.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">참고 문서 선택</label>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {documents.map((doc) => (
+                    <label
+                      key={doc.id}
+                      className="flex items-center gap-2 p-2 rounded hover:bg-secondary cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedDocuments.includes(doc.id)}
+                        onChange={() => toggleDocument(doc.id)}
+                        disabled={isGenerating}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm">{doc.title}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-medium">추가 지시사항 (선택)</label>
               <Input
@@ -172,9 +247,6 @@ export function CoverLetter() {
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                     <CardTitle>생성 완료</CardTitle>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    유사도: 87%
-                  </span>
                 </div>
                 <CardDescription>
                   {companyName} 지원용 자기소개서

@@ -8,6 +8,7 @@ import {
 } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Languages, Loader2, Copy, Upload, Mail, FileText } from "lucide-react";
+import { aiApi } from "../../../services/api";
 
 type TranslationType = "text" | "srt" | "email";
 
@@ -41,42 +42,40 @@ export function Translate() {
     }
 
     setIsTranslating(true);
+    setResult("");
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      let response;
 
-    if (type === "email") {
-      setResult(`Subject: Project Status Update
+      if (type === "email") {
+        response = await aiApi.writeEmail({
+          target_language: targetLanguage,
+          context,
+          key_points: keyPoints,
+        });
+      } else if (type === "srt") {
+        // For SRT, we'd typically use file upload
+        // For now, treat as text translation
+        response = await aiApi.translateText({
+          translation_type: "srt",
+          target_language: targetLanguage,
+          content: inputText,
+        });
+      } else {
+        response = await aiApi.translateText({
+          translation_type: "text",
+          target_language: targetLanguage,
+          content: inputText,
+        });
+      }
 
-Dear Team,
-
-I hope this email finds you well. I am writing to provide you with an update on the current project status.
-
-${keyPoints
-  .split("\n")
-  .map((point) => `- ${point}`)
-  .join("\n")}
-
-Please let me know if you have any questions or concerns.
-
-Best regards,
-[Your Name]`);
-    } else if (type === "srt") {
-      setResult(`1
-00:00:01,000 --> 00:00:04,000
-Welcome to this tutorial.
-
-2
-00:00:04,500 --> 00:00:08,000
-Today we will learn about AI.`);
-    } else {
-      setResult(
-        `This is the translated text in ${
-          languages.find((l) => l.value === targetLanguage)?.label
-        }.`
-      );
+      setResult(response.data.result || response.data.content || response.data.translated_text);
+    } catch (error: any) {
+      console.error("Translation failed:", error);
+      alert(error.response?.data?.detail || "처리에 실패했습니다.");
+    } finally {
+      setIsTranslating(false);
     }
-
-    setIsTranslating(false);
   };
 
   const copyResult = () => {

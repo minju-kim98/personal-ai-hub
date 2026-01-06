@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -16,45 +16,32 @@ import {
   Plus,
   X,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
+import { economyApi } from "../../../services/api";
 
-// Mock data
-const mockNews = [
-  {
-    id: "1",
-    title: "OpenAI, GPT-5.2 출시... 성능 30% 향상",
-    source: "TechCrunch",
-    category: "ai",
-    sentiment: "positive",
-    summary: "OpenAI가 새로운 GPT-5.2 모델을 발표했습니다. 이전 버전 대비 추론 능력이 30% 향상되었습니다.",
-    published_at: "2026-01-06T08:00:00Z",
-  },
-  {
-    id: "2",
-    title: "클라우드 시장, 2026년 1조 달러 돌파 전망",
-    source: "Bloomberg",
-    category: "cloud",
-    sentiment: "positive",
-    summary: "글로벌 클라우드 컴퓨팅 시장이 올해 1조 달러를 돌파할 것으로 예상됩니다.",
-    published_at: "2026-01-06T07:30:00Z",
-  },
-  {
-    id: "3",
-    title: "사이버 보안 위협 증가, 기업들 대응 강화",
-    source: "SecurityWeek",
-    category: "security",
-    sentiment: "negative",
-    summary: "랜섬웨어 공격이 전년 대비 40% 증가하면서 기업들이 보안 투자를 늘리고 있습니다.",
-    published_at: "2026-01-06T06:00:00Z",
-  },
-];
+interface NewsArticle {
+  id: string;
+  title: string;
+  source: string;
+  category: string;
+  sentiment: string;
+  summary: string;
+  published_at: string;
+  url?: string;
+}
 
-const mockStocks = [
-  { symbol: "AAPL", name: "Apple Inc.", change: "+2.3%" },
-  { symbol: "GOOGL", name: "Alphabet Inc.", change: "+1.8%" },
-  { symbol: "MSFT", name: "Microsoft Corp.", change: "-0.5%" },
-];
+interface Stock {
+  symbol: string;
+  name: string;
+  change: string;
+}
+
+interface EconomySettings {
+  email_enabled: boolean;
+  email_time: string;
+}
 
 type Tab = "news" | "expenses" | "settings";
 
@@ -62,23 +49,98 @@ export function Economy() {
   const [activeTab, setActiveTab] = useState<Tab>("news");
   const [newsCategory, setNewsCategory] = useState("all");
   const [newStock, setNewStock] = useState("");
-  const [stocks, setStocks] = useState(mockStocks);
+  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [isLoadingNews, setIsLoadingNews] = useState(false);
+  const [isLoadingStocks, setIsLoadingStocks] = useState(false);
+  const [settings, setSettings] = useState<EconomySettings>({
+    email_enabled: true,
+    email_time: "06:30",
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
-  const addStock = () => {
-    if (newStock) {
-      setStocks([...stocks, { symbol: newStock.toUpperCase(), name: "", change: "0%" }]);
+  // Fetch news
+  const fetchNews = useCallback(async () => {
+    setIsLoadingNews(true);
+    try {
+      const params = newsCategory !== "all" ? { category: newsCategory } : {};
+      const response = await economyApi.listNews(params);
+      setNews(response.data.items || response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch news:", error);
+    } finally {
+      setIsLoadingNews(false);
+    }
+  }, [newsCategory]);
+
+  // Fetch stocks
+  const fetchStocks = useCallback(async () => {
+    setIsLoadingStocks(true);
+    try {
+      const response = await economyApi.listStocks();
+      setStocks(response.data.items || response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch stocks:", error);
+    } finally {
+      setIsLoadingStocks(false);
+    }
+  }, []);
+
+  // Fetch settings
+  const fetchSettings = useCallback(async () => {
+    try {
+      const response = await economyApi.getSettings();
+      setSettings(response.data);
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
+
+  useEffect(() => {
+    fetchStocks();
+    fetchSettings();
+  }, [fetchStocks, fetchSettings]);
+
+  const addStock = async () => {
+    if (!newStock) return;
+    try {
+      await economyApi.addStock(newStock.toUpperCase());
+      await fetchStocks();
       setNewStock("");
+    } catch (error) {
+      console.error("Failed to add stock:", error);
+      alert("종목 추가에 실패했습니다.");
     }
   };
 
-  const removeStock = (symbol: string) => {
-    setStocks(stocks.filter((s) => s.symbol !== symbol));
+  const removeStock = async (symbol: string) => {
+    try {
+      await economyApi.removeStock(symbol);
+      await fetchStocks();
+    } catch (error) {
+      console.error("Failed to remove stock:", error);
+      alert("종목 삭제에 실패했습니다.");
+    }
   };
 
-  const filteredNews =
-    newsCategory === "all"
-      ? mockNews
-      : mockNews.filter((n) => n.category === newsCategory);
+  const saveSettings = async () => {
+    setIsSavingSettings(true);
+    try {
+      await economyApi.updateSettings(settings as unknown as Record<string, unknown>);
+      alert("설정이 저장되었습니다.");
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      alert("설정 저장에 실패했습니다.");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const filteredNews = news;
 
   return (
     <div className="space-y-6">
@@ -150,43 +212,63 @@ export function Economy() {
               ))}
             </div>
 
-            {filteredNews.map((news) => (
-              <Card key={news.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-base">{news.title}</CardTitle>
-                      <CardDescription className="text-xs">
-                        {news.source} ·{" "}
-                        {new Date(news.published_at).toLocaleDateString("ko-KR")}
-                      </CardDescription>
-                    </div>
-                    <span
-                      className={cn(
-                        "px-2 py-1 rounded text-xs",
-                        news.sentiment === "positive"
-                          ? "bg-green-100 text-green-700"
-                          : news.sentiment === "negative"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-700"
-                      )}
-                    >
-                      {news.sentiment === "positive"
-                        ? "긍정"
-                        : news.sentiment === "negative"
-                        ? "부정"
-                        : "중립"}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{news.summary}</p>
-                  <Button variant="link" size="sm" className="px-0 mt-2">
-                    자세히 보기 <ExternalLink className="h-3 w-3 ml-1" />
-                  </Button>
+            {isLoadingNews ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : filteredNews.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Newspaper className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>뉴스가 없습니다</p>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              filteredNews.map((article) => (
+                <Card key={article.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-base">{article.title}</CardTitle>
+                        <CardDescription className="text-xs">
+                          {article.source} ·{" "}
+                          {new Date(article.published_at).toLocaleDateString("ko-KR")}
+                        </CardDescription>
+                      </div>
+                      <span
+                        className={cn(
+                          "px-2 py-1 rounded text-xs",
+                          article.sentiment === "positive"
+                            ? "bg-green-100 text-green-700"
+                            : article.sentiment === "negative"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-gray-100 text-gray-700"
+                        )}
+                      >
+                        {article.sentiment === "positive"
+                          ? "긍정"
+                          : article.sentiment === "negative"
+                          ? "부정"
+                          : "중립"}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{article.summary}</p>
+                    {article.url && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="px-0 mt-2"
+                        onClick={() => window.open(article.url, "_blank")}
+                      >
+                        자세히 보기 <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
 
           {/* Stocks */}
@@ -208,41 +290,51 @@ export function Economy() {
               </div>
 
               <div className="space-y-2">
-                {stocks.map((stock) => (
-                  <div
-                    key={stock.symbol}
-                    className="flex items-center justify-between p-2 bg-secondary/50 rounded"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{stock.symbol}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {stock.name || "Loading..."}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "text-sm font-medium",
-                          stock.change.startsWith("+")
-                            ? "text-green-600"
-                            : stock.change.startsWith("-")
-                            ? "text-red-600"
-                            : ""
-                        )}
-                      >
-                        {stock.change}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => removeStock(stock.symbol)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
+                {isLoadingStocks ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
-                ))}
+                ) : stocks.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    관심 종목을 추가하세요
+                  </p>
+                ) : (
+                  stocks.map((stock) => (
+                    <div
+                      key={stock.symbol}
+                      className="flex items-center justify-between p-2 bg-secondary/50 rounded"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{stock.symbol}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {stock.name || "Loading..."}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            stock.change?.startsWith("+")
+                              ? "text-green-600"
+                              : stock.change?.startsWith("-")
+                              ? "text-red-600"
+                              : ""
+                          )}
+                        >
+                          {stock.change || "0%"}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => removeStock(stock.symbol)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -283,16 +375,44 @@ export function Economy() {
               <div>
                 <p className="font-medium">이메일 발송</p>
                 <p className="text-sm text-muted-foreground">
-                  매일 오전 6:30에 발송
+                  매일 오전 {settings.email_time}에 발송
                 </p>
               </div>
-              <input type="checkbox" className="h-5 w-5" defaultChecked />
+              <input
+                type="checkbox"
+                className="h-5 w-5"
+                checked={settings.email_enabled}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    email_enabled: e.target.checked,
+                  }))
+                }
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">발송 시간</label>
-              <Input type="time" defaultValue="06:30" />
+              <Input
+                type="time"
+                value={settings.email_time}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    email_time: e.target.value,
+                  }))
+                }
+              />
             </div>
-            <Button>설정 저장</Button>
+            <Button onClick={saveSettings} disabled={isSavingSettings}>
+              {isSavingSettings ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                "설정 저장"
+              )}
+            </Button>
           </CardContent>
         </Card>
       )}

@@ -9,6 +9,7 @@ import {
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { FileBarChart, Loader2, CheckCircle2, Copy } from "lucide-react";
+import { aiApi } from "../../../services/api";
 
 export function WeeklyReport() {
   const [tasksCompleted, setTasksCompleted] = useState("");
@@ -24,36 +25,22 @@ export function WeeklyReport() {
     }
 
     setIsGenerating(true);
+    setResult(null);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      const response = await aiApi.createWeeklyReport({
+        tasks_completed: tasksCompleted,
+        next_week_plan: nextWeekPlan || undefined,
+        boss_preferences: bossPreferences || undefined,
+      });
 
-    setResult(`# 주간업무보고 (2026.01.06 ~ 01.10)
-
-## 1. 금주 수행 업무
-
-### 프로젝트 A
-| 구분 | 내용 | 진행률 |
-|-----|------|-------|
-| 완료 | API 설계 및 문서화 | 100% |
-| 진행중 | 프론트엔드 UI 개발 | 70% |
-
-### 프로젝트 B
-- (완료) 데이터베이스 마이그레이션
-- (진행중) 성능 테스트 및 최적화
-
-## 2. 이슈 및 해결
-
-| 이슈 | 원인 | 해결방안 | 상태 |
-|-----|-----|---------|-----|
-| 서버 지연 | DB 쿼리 비효율 | 인덱스 추가 | 완료 |
-
-## 3. 차주 계획
-1. 프로젝트 A 프론트엔드 완료
-2. 프로젝트 B 성능 최적화 마무리
-3. 신규 기능 기획 미팅 참석`);
-
-    setIsGenerating(false);
+      setResult(response.data.result || response.data.content);
+    } catch (error: any) {
+      console.error("Failed to create weekly report:", error);
+      alert(error.response?.data?.detail || "주간보고서 생성에 실패했습니다.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const copyToClipboard = () => {
