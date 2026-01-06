@@ -5,10 +5,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from loguru import logger
 
 from app.core.config import settings
 from app.core.database import init_db
 from app.api.v1.router import api_router
+from app.tasks.scheduler import start_scheduler, shutdown_scheduler
 
 
 @asynccontextmanager
@@ -21,10 +23,15 @@ async def lifespan(app: FastAPI):
     # Initialize database (create tables if not exist)
     await init_db()
 
+    # Start background scheduler
+    start_scheduler()
+    logger.info("Background scheduler started")
+
     yield
 
     # Shutdown
-    pass
+    shutdown_scheduler()
+    logger.info("Background scheduler stopped")
 
 
 app = FastAPI(

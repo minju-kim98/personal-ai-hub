@@ -17,6 +17,7 @@ import {
   X,
   ExternalLink,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { economyApi } from "../../../services/api";
@@ -58,6 +59,22 @@ export function Economy() {
     email_time: "06:30",
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isFetchingNews, setIsFetchingNews] = useState(false);
+
+  // Trigger news fetch from RSS feeds
+  const triggerNewsFetch = async () => {
+    setIsFetchingNews(true);
+    try {
+      await economyApi.fetchNews();
+      alert("뉴스 수집이 완료되었습니다!");
+      await fetchNews();
+    } catch (error) {
+      console.error("Failed to fetch news:", error);
+      alert("뉴스 수집에 실패했습니다.");
+    } finally {
+      setIsFetchingNews(false);
+    }
+  };
 
   // Fetch news
   const fetchNews = useCallback(async () => {
@@ -191,25 +208,41 @@ export function Economy() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* News List */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex gap-2">
-              {["all", "ai", "cloud", "security", "startup"].map((cat) => (
-                <Button
-                  key={cat}
-                  variant={newsCategory === cat ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setNewsCategory(cat)}
-                >
-                  {cat === "all"
-                    ? "전체"
-                    : cat === "ai"
-                    ? "AI"
-                    : cat === "cloud"
-                    ? "클라우드"
-                    : cat === "security"
-                    ? "보안"
-                    : "스타트업"}
-                </Button>
-              ))}
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                {["all", "ai", "cloud", "security", "startup"].map((cat) => (
+                  <Button
+                    key={cat}
+                    variant={newsCategory === cat ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setNewsCategory(cat)}
+                  >
+                    {cat === "all"
+                      ? "전체"
+                      : cat === "ai"
+                      ? "AI"
+                      : cat === "cloud"
+                      ? "클라우드"
+                      : cat === "security"
+                      ? "보안"
+                      : "스타트업"}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={triggerNewsFetch}
+                disabled={isFetchingNews}
+                className="gap-2"
+              >
+                {isFetchingNews ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                {isFetchingNews ? "수집 중..." : "뉴스 수집"}
+              </Button>
             </div>
 
             {isLoadingNews ? (

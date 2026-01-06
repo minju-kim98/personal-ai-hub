@@ -192,6 +192,8 @@ export const economyApi = {
 
   getNews: (id: string) => api.get(`/economy/news/${id}`),
 
+  fetchNews: () => api.post("/economy/news/fetch"),
+
   // Stocks
   listStocks: () => api.get("/economy/stocks"),
   addStock: (symbol: string, name?: string) =>

@@ -26,6 +26,23 @@ router = APIRouter()
 
 # ===== News Routes =====
 
+@router.post("/news/fetch")
+async def trigger_news_fetch(
+    current_user: User = Depends(get_current_user),
+):
+    """Manually trigger news fetching (admin only)."""
+    from app.tasks.scheduler import run_job_now
+
+    try:
+        stats = await run_job_now("news_fetch")
+        return {"message": "News fetch completed", "stats": stats}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"News fetch failed: {str(e)}"
+        )
+
+
 @router.get("/news", response_model=NewsListResponse)
 async def list_news(
     category: Optional[str] = Query(None),
