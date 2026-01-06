@@ -25,7 +25,7 @@ class LLMClients:
             cls._instance = cls()
         return cls._instance
 
-    def get_openai(self, model: str = "gpt-4o-mini", temperature: float = 0.7) -> ChatOpenAI:
+    def get_openai(self, model: str = "gpt-5-mini", temperature: float = 0.7) -> ChatOpenAI:
         """Get OpenAI client."""
         key = (model, temperature)
         if key not in self._openai_clients:
@@ -36,8 +36,12 @@ class LLMClients:
             )
         return self._openai_clients[key]
 
-    def get_google(self, model: str = "gemini-1.5-flash", temperature: float = 0.7) -> ChatGoogleGenerativeAI:
-        """Get Google Gemini client."""
+    def get_google(self, model: str = "gemini-3-flash-preview", temperature: float = 1.0) -> ChatGoogleGenerativeAI:
+        """Get Google Gemini client.
+
+        Note: Gemini 3 recommends temperature=1.0 as default.
+        thinking_level parameter is not yet supported in langchain-google-genai.
+        """
         key = (model, temperature)
         if key not in self._google_clients:
             self._google_clients[key] = ChatGoogleGenerativeAI(
@@ -47,8 +51,12 @@ class LLMClients:
             )
         return self._google_clients[key]
 
-    def get_anthropic(self, model: str = "claude-3-5-sonnet-20241022", temperature: float = 0.7) -> ChatAnthropic:
-        """Get Anthropic Claude client."""
+    def get_anthropic(self, model: str = "claude-sonnet-4-5-20250929", temperature: float = 0.7) -> ChatAnthropic:
+        """Get Anthropic Claude client.
+
+        Note: Claude 4.5 does not allow both temperature and top_p to be specified.
+        Only temperature is used here.
+        """
         key = (model, temperature)
         if key not in self._anthropic_clients:
             self._anthropic_clients[key] = ChatAnthropic(
