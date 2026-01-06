@@ -43,9 +43,17 @@ export function Login() {
     setError(null);
 
     try {
+      // 1. Login and get tokens
       const tokenResponse = await authApi.login(data.email, data.password);
+
+      // 2. Store tokens first so interceptor can use them
+      const { setTokens } = useAuthStore.getState();
+      setTokens(tokenResponse.data.access_token, tokenResponse.data.refresh_token);
+
+      // 3. Now fetch user info with the token
       const userResponse = await userApi.getMe();
 
+      // 4. Complete login with user data
       login(tokenResponse.data, userResponse.data);
       navigate("/");
     } catch (err: any) {
