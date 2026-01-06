@@ -6,8 +6,10 @@ export function MainLayout() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-6">
-          <Outlet />
+        <div className="min-h-full p-6 lg:p-8">
+          <div className="mx-auto max-w-6xl animate-fade-in">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

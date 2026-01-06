@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
 import {
   FolderOpen,
   PenTool,
@@ -16,51 +15,88 @@ import {
   TrendingUp,
   Map,
   ArrowRight,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/auth";
+import { cn } from "../../lib/utils";
 
 const aiFeatures = [
   {
-    name: "자기소개서 AI",
-    description: "이력서와 포트폴리오를 기반으로 맞춤형 자기소개서를 작성합니다",
+    name: "자기소개서",
+    description: "맞춤형 자기소개서 작성",
     icon: PenTool,
     href: "/ai/cover-letter",
-    color: "bg-blue-500",
+    gradient: "from-blue-500 to-blue-600",
+    bgLight: "bg-blue-50",
+    textColor: "text-blue-600",
   },
   {
-    name: "주간보고 AI",
-    description: "기존 보고서 스타일을 학습하여 구조화된 보고서를 생성합니다",
+    name: "주간보고",
+    description: "구조화된 보고서 생성",
     icon: FileBarChart,
     href: "/ai/weekly-report",
-    color: "bg-green-500",
+    gradient: "from-emerald-500 to-emerald-600",
+    bgLight: "bg-emerald-50",
+    textColor: "text-emerald-600",
   },
   {
-    name: "기획서 AI",
-    description: "Deep Research 기반으로 상세한 기획서를 작성합니다",
+    name: "기획서",
+    description: "Deep Research 기반 기획",
     icon: Lightbulb,
     href: "/ai/proposal",
-    color: "bg-yellow-500",
+    gradient: "from-amber-500 to-orange-500",
+    bgLight: "bg-amber-50",
+    textColor: "text-amber-600",
   },
   {
-    name: "다국어 AI",
-    description: "자막 번역, 이메일 작성 등 다국어 관련 작업을 처리합니다",
+    name: "다국어",
+    description: "번역 및 이메일 작성",
     icon: Languages,
     href: "/ai/translate",
-    color: "bg-purple-500",
+    gradient: "from-violet-500 to-purple-600",
+    bgLight: "bg-violet-50",
+    textColor: "text-violet-600",
   },
   {
-    name: "경제 이슈 AI",
-    description: "IT 뉴스 요약과 개인 재정 분석을 제공합니다",
+    name: "경제 이슈",
+    description: "IT 뉴스 요약 및 재정 분석",
     icon: TrendingUp,
     href: "/ai/economy",
-    color: "bg-red-500",
+    gradient: "from-rose-500 to-red-600",
+    bgLight: "bg-rose-50",
+    textColor: "text-rose-600",
   },
   {
-    name: "여행 코스 AI",
-    description: "맞춤형 여행/데이트 코스와 일정을 계획합니다",
+    name: "여행 코스",
+    description: "맞춤형 여행 일정 계획",
     icon: Map,
     href: "/ai/travel",
-    color: "bg-cyan-500",
+    gradient: "from-cyan-500 to-teal-600",
+    bgLight: "bg-cyan-50",
+    textColor: "text-cyan-600",
+  },
+];
+
+const stats = [
+  {
+    name: "문서함",
+    value: "문서 관리",
+    description: "이력서, 포트폴리오 업로드",
+    icon: FolderOpen,
+    href: "/documents",
+  },
+  {
+    name: "AI 기능",
+    value: "6개",
+    description: "다양한 AI 자동화",
+    icon: Sparkles,
+  },
+  {
+    name: "개인화",
+    value: "맞춤 서비스",
+    description: "내 문서 기반 분석",
+    icon: Zap,
   },
 ];
 
@@ -70,84 +106,92 @@ export function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">
-            안녕하세요, {user?.name}님!
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            안녕하세요, {user?.name}님
           </h1>
           <p className="text-muted-foreground mt-1">
-            나만을 위한 AI 어시스턴트가 준비되어 있습니다
+            오늘도 AI와 함께 효율적인 하루 되세요
           </p>
         </div>
-        <Link to="/documents">
-          <Button variant="outline" className="gap-2">
-            <FolderOpen className="h-4 w-4" />
-            내 문서함
-          </Button>
+        <Link
+          to="/documents"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+        >
+          <FolderOpen className="h-4 w-4" />
+          문서함 열기
         </Link>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>문서함</CardDescription>
-            <CardTitle className="text-2xl">문서 관리</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              이력서, 포트폴리오, 자기소개서 등을 업로드하세요
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>AI 기능</CardDescription>
-            <CardTitle className="text-2xl">6개 기능</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              다양한 AI 기능으로 업무를 자동화하세요
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>개인화</CardDescription>
-            <CardTitle className="text-2xl">맞춤 서비스</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              내 문서를 기반으로 개인화된 결과를 제공합니다
-            </p>
-          </CardContent>
-        </Card>
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {stats.map((stat) => (
+          <Card
+            key={stat.name}
+            className={cn(
+              "border-0 shadow-sm bg-card/80 backdrop-blur-sm",
+              stat.href && "cursor-pointer hover:shadow-md transition-shadow"
+            )}
+          >
+            {stat.href ? (
+              <Link to={stat.href}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="font-medium">{stat.name}</CardDescription>
+                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <CardTitle className="text-xl">{stat.value}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{stat.description}</p>
+                </CardContent>
+              </Link>
+            ) : (
+              <>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="font-medium">{stat.name}</CardDescription>
+                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <CardTitle className="text-xl">{stat.value}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{stat.description}</p>
+                </CardContent>
+              </>
+            )}
+          </Card>
+        ))}
       </div>
 
       {/* AI Features Grid */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">AI 기능</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">AI 기능</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {aiFeatures.map((feature) => (
             <Link key={feature.name} to={feature.href}>
-              <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
-                <CardHeader>
+              <Card className="h-full border-0 shadow-sm bg-card/80 backdrop-blur-sm card-hover cursor-pointer group overflow-hidden">
+                <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`h-10 w-10 rounded-lg ${feature.color} flex items-center justify-center`}
-                    >
+                    <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center bg-gradient-to-br shadow-sm", feature.gradient)}>
                       <feature.icon className="h-5 w-5 text-white" />
                     </div>
-                    <CardTitle className="text-lg">{feature.name}</CardTitle>
+                    <div>
+                      <CardTitle className="text-base">{feature.name}</CardTitle>
+                      <CardDescription className="text-xs mt-0.5">
+                        {feature.description}
+                      </CardDescription>
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {feature.description}
-                  </p>
-                  <div className="mt-4 flex items-center text-primary text-sm font-medium group-hover:gap-2 transition-all">
+                <CardContent className="pt-0">
+                  <div className={cn("inline-flex items-center text-sm font-medium transition-all group-hover:gap-2", feature.textColor)}>
                     시작하기
-                    <ArrowRight className="h-4 w-4 ml-1" />
+                    <ArrowRight className="h-3.5 w-3.5 ml-1 transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </CardContent>
               </Card>
