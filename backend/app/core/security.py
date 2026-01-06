@@ -5,8 +5,8 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from app.core.config import settings
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing (using Argon2)
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 class TokenData(BaseModel):
