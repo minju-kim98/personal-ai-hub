@@ -67,6 +67,12 @@ const expenseCategories = [
 
 type Tab = "news" | "expenses" | "settings";
 
+// HTML 태그 제거 유틸리티
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "").trim();
+}
+
 export function Economy() {
   const [activeTab, setActiveTab] = useState<Tab>("news");
   const [newsCategory, setNewsCategory] = useState("all");
@@ -391,7 +397,9 @@ export function Economy() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">{article.summary}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3 break-words">
+                      {stripHtml(article.summary)}
+                    </p>
                     {article.url && (
                       <Button
                         variant="link"
