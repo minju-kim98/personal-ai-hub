@@ -65,22 +65,22 @@ def get_llm_clients() -> LLMClients:
 
 
 # Model aliases for easy access
-# These will use the latest available models
+# These map shorthand names to actual API model IDs
 MODEL_ALIASES = {
-    # OpenAI
-    "gpt-5.2": "gpt-4o",  # Fallback to available model
-    "gpt-5": "gpt-4o",
-    "gpt-5-mini": "gpt-4o-mini",
-    "gpt-5-nano": "gpt-4o-mini",
+    # OpenAI GPT-5 family
+    "gpt-5.2": "gpt-5.2",
+    "gpt-5": "gpt-5",
+    "gpt-5-mini": "gpt-5-mini",
+    "gpt-5-nano": "gpt-5-nano",
 
-    # Google
-    "gemini-3-pro": "gemini-1.5-pro",
-    "gemini-3-flash": "gemini-1.5-flash",
+    # Google Gemini 3 family
+    "gemini-3-pro": "gemini-3-pro-preview",
+    "gemini-3-flash": "gemini-3-flash-preview",
 
-    # Anthropic
-    "claude-opus-4.5": "claude-3-5-sonnet-20241022",
-    "claude-sonnet-4.5": "claude-3-5-sonnet-20241022",
-    "claude-haiku-4.5": "claude-3-5-haiku-20241022",
+    # Anthropic Claude 4.5 family
+    "claude-opus-4.5": "claude-opus-4-5-20251124",
+    "claude-sonnet-4.5": "claude-sonnet-4-5-20250929",
+    "claude-haiku-4.5": "claude-haiku-4-5-20251001",
 }
 
 

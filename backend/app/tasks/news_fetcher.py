@@ -82,7 +82,7 @@ async def summarize_and_analyze(article: dict) -> dict:
             return article
 
         llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-exp",
+            model="gemini-3-flash-preview",
             google_api_key=settings.GOOGLE_API_KEY,
             temperature=0.3,
         )
